@@ -3,11 +3,11 @@ import pandas as pd
 import os
 
 # Download dataset from Hugging Face
-data = load_dataset('Yelp/yelp_review_full')
+# data = load_dataset('Yelp/yelp_review_full')
 
 
 #Save it to local data folder
-data.save_to_disk('./data/yelp_review_full')
+# data.save_to_disk('./data/yelp_review_full')
 
 # Check distribution for dataset
 dataset = load_from_disk('data/yelp_review_full')
@@ -32,6 +32,7 @@ print(f'Test data Max text length: {max_test}')
 # Check distribution for train data after Elimination
 train_filter_category_counts = train_filter['label'].value_counts().sort_index()
 test_filter_category_counts = test_filter['label'].value_counts().sort_index()
+print(len(train_filter))
 print(train_filter_category_counts/len(train_filter))
 print(test_filter_category_counts/len(test_filter))
 

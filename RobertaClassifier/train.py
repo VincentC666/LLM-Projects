@@ -3,12 +3,17 @@ from net import RobertaClassification
 from YelpData import YelpDataset
 import torch
 from torch.utils.data import DataLoader
-from transformers import RobertaTokenizer,RobertaConfig,RobertaModel
 import torch.optim as optim
+from torch.cuda.amp import GradScaler, autocast
+from transformers.optimization import get_scheduler
+from transformers import RobertaTokenizer,RobertaConfig,RobertaModel
 from common import constants
 import json
 from sklearn import metrics
 import logging
+from tensorboardX import SummaryWriter
+
+
 
 def main():
 
@@ -31,12 +36,15 @@ def main():
     # Setup logging config
     logging.basicConfig(filename='Model_training.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
+    # Setup Tensorboard SummerWrtier
+    writer = SummaryWriter('logdir/')
+
     # Get All Label name from the dataset
     LABELS = data_info['features']['label']['names']
 
     # ---------- Load Data ----------------
-    train_dataset = YelpDataset(DATAFILE_PATH,MODEL_PATH,'train')
-    test_dataset = YelpDataset(DATAFILE_PATH,MODEL_PATH,'test')
+    train_dataset = YelpDataset(DATAFILE_PATH,MODEL_PATH,'train_samll')
+    test_dataset = YelpDataset(DATAFILE_PATH,MODEL_PATH,'test_small')
 
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True,drop_last=True,collate_fn=train_dataset.load_data)
     test_loader =  DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False,drop_last=True,collate_fn=test_dataset.load_data)
@@ -54,11 +62,19 @@ def main():
     print(model)
 
     # ---------- Initialize Optimizer ----------------
+    # Initialize Grad Scaler
+    scaler = GradScaler()
 
-    # Define Optimizer
+    # Initialize Optimizer
     optimizer = torch.optim.AdamW(model.parameters())
 
-    # Define loss function
+    # Initialize optimizer scheduler
+    scheduler = get_scheduler(name = 'linear',
+                              num_warmup_steps = 0,
+                              num_training_steps = len(train_loader),
+                              optimizer=optimizer)
+
+    # Initialize loss function
     loss_func = torch.nn.CrossEntropyLoss()
 
     # Store best validation accuracy and best f1 score
@@ -72,20 +88,34 @@ def main():
         for i, (tokens,labels) in enumerate(train_loader):
             # send data to DEVICE
             tokens, labels = tokens.to(DEVICE), labels.to(DEVICE)
-            # put data to model and get output
-            out = model(tokens)
-            # compute loss function according to output and labels
-            loss = loss_func(out, labels)
+
+            # use autocase to implement mixed precision training
+            with autocast():
+                # put data to model and get output
+                out = model(tokens)
+                # compute loss function according to output and labels
+                loss = loss_func(out, labels)
+
             # Optimize parameters based on loss
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scheduler.step()
+            scaler.update()
+
+            # Caculate accuracy
+            out = out.argmax(dim=1)
+            acc = (out == labels).sum().item() / len(labels)
+
+            # Write loss and accuracy to tensorboard
+            writer.add_scalar('Loss/Train',loss.item(),epoch*len(train_loader)+i)
+            writer.add_scalar('Accuracy/Train',acc,epoch*len(train_loader)+i)
 
             # Record loss and accuracy for every 5 batches
-            if i%5==0:
-                out = out.argmax(dim=1)
-                acc = (out==labels).sum().item()/len(labels)
-                logging.inf(f"Epoch:{epoch}, i:{i}, loss:{loss.item()}, acc:{acc}")
+            if i%50==0:
+                logging.inf(f"Epoch:{epoch}, i:{i}, Loss:{loss.item()}, Acc:{acc}")
+
+
 
         # Evaluating model by test data
         model.eval()

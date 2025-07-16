@@ -9,8 +9,8 @@ import torch
 
 
 class YelpDataset(Dataset):
-    def __init__(self, datafile_path,model_path,split='train'):
-        self.dataset = load_dataset('csv',data_files=f'{constants.CLEAN_DATA_PATH}/{split}.csv',split='train')
+    def __init__(self, datafile_path,model_path,filename='train'):
+        self.dataset = load_dataset('csv',data_files=f'{constants.CLEAN_DATA_PATH}/{filename}.csv',split='train')
         self.tokenizer = RobertaTokenizer.from_pretrained(f'{model_path}')
 
 
