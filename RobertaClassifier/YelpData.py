@@ -21,16 +21,16 @@ class YelpDataset(Dataset):
         tokens = tokenizer.batch_encode_plus(
             batch_text_or_text_pairs=texts,
             truncation=True,
-            max_length = 1024,
             padding='max_length',
             return_tensors ='pt',
             return_length = True
         )
         input_ids = tokens["input_ids"]
-        attention_mask = tokens["attention_mask"]
+        attention_masks = tokens["attention_mask"]
+        # token_type_ids = tokens["token_type_ids"]
         labels = torch.LongTensor(labels)
 
-        return tokens,labels
+        return input_ids,attention_masks,labels
 
 
     def __len__(self):

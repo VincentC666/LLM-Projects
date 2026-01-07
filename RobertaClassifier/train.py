@@ -55,7 +55,7 @@ def main():
     config = RobertaConfig.from_pretrained(MODEL_PATH)
     num_labels = len(LABELS)
     # Change the max_postion_embedding to 1024, and put the model to DEVICE
-    config.max_position_embeddings = 1024
+    # config.max_position_embeddings = 1024
 
     # Initialize model
     model = RobertaClassification(config, num_labels).to(DEVICE)
@@ -85,19 +85,20 @@ def main():
 
     logging.info('-'*10 + 'Model Training Start ' + '-'*10)
     for epoch in range(EPOCHS):
-        for i, (tokens,labels) in enumerate(train_loader):
+        for i, (input_ids,attention_masks,labels) in enumerate(train_loader):
             # send data to DEVICE
-            tokens, labels = tokens.to(DEVICE), labels.to(DEVICE)
+            input_ids,attention_masks,labels = input_ids.to(DEVICE), attention_masks.to(DEVICE),labels.to(DEVICE)
 
             # use autocase to implement mixed precision training
             with autocast():
                 # put data to model and get output
-                out = model(tokens)
+                out = model(input_ids,attention_masks)
                 # compute loss function according to output and labels
                 loss = loss_func(out, labels)
 
             # Optimize parameters based on loss
             optimizer.zero_grad()
+            model.zero_gard()
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scheduler.step()
@@ -123,9 +124,9 @@ def main():
         with torch.no_grad():
             val_loss = 0.0
             val_acc = 0.0
-            for i, (tokens,labels) in enumerate(test_loader):
-                tokens, labels = tokens.to(DEVICE), labels.to(DEVICE)
-                out = model(tokens)
+            for i, (input_ids,attention_masks,labels) in enumerate(test_loader):
+                input_ids,attention_masks,labels = input_ids.to(DEVICE), attention_masks.to(DEVICE),labels.to(DEVICE)
+                out = model(input_ids,attention_masks)
                 # Get validation loss and validation accuracy
                 val_loss += loss_func(out, labels)
                 out = out.argmax(dim=1)
@@ -134,10 +135,12 @@ def main():
             val_loss /= len(test_loader)
             val_acc /= len(test_loader)
             logging.info(f'Validation: loss:{val_loss}, acc:{val_acc}')
+
         # Generate classification report
-        report = metrics.classification_report(labels, out, labels=list(range(num_labels)),
-                                               target_names=LABELS)
-        logging.info(report)
+        # report = metrics.classification_report(labels, out, labels=list(range(num_labels)),
+        #                                        target_names=LABELS)
+        # logging.info(report)
+
         # Get f1 scorce for the model
         f1 = metrics.f1_score(labels, out,labels=list(range(num_labels)), average='macro')
         # Save the best f1 score parameters

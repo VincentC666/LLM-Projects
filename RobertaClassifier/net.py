@@ -10,15 +10,20 @@ class RobertaClassification(torch.nn.Module):
         # Define Classifier
         self.classifier = torch.nn.Linear(config.hidden_size, num_labels)
 
-    def forward(self, encode_token):
+    def forward(self, input_ids,attention_masks):
         # Output from Roberta model
-        output = self.roberta(encode_token)
+        with torch.no_grad():
+            output = self.roberta(input_ids,attention_masks)
+        out = self.classifier(output.last_hidden_state[:,0])
+        #out = out.softmax(dim=1)
+        return out
         # Get Pooled output for [CLS] token
-        pooled = output[1]
-        # Feed the [CLS] output to the classifier layer
-        logits = self.classifier(pooled)
+        # pooled = output[1]
+        # # Feed the [CLS] output to the classifier layer
+        # logits = self.classifier(pooled)
+        # return logits
         # Return classification results from Softmax
-        return torch.softmax(logits, dim=1)
+        # return torch.softmax(logits, dim=1)
 
 
 

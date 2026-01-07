@@ -5,7 +5,7 @@ from llama_index.core import VectorStoreIndex, StorageContext, Settings, get_res
 import chromadb
 import Config
 
-
+@st.cache_resource(show_spinner="loading Knowledge base...")
 def init_vector_store(_nodes):
     chroma_client = chromadb.PersistentClient(path=Config.VECTOR_DB_DIR)
     chroma_collection = chroma_client.get_or_create_collection(

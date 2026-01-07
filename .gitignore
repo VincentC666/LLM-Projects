@@ -2,4 +2,6 @@
 /RobertaClassifier/model/
 /RobertaClassifier/.idea/
 /RAG-LAW/data/
-
+/RAG-LAW/.env/
+/RAG-LAW/storage/
+/RAG-LAW/chaoma_db/

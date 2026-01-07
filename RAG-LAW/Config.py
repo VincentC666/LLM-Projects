@@ -3,6 +3,7 @@
 # ============= Config ==============
 
 EMBED_MODEL_PATH = r""
+RERANK_MODEL_PATH = r""
 LLM_MODEL_PATH = r""
 
 DATA_DIR = "./data"

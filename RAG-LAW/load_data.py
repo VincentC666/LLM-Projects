@@ -22,14 +22,14 @@ def load_json_files(data_dir:str) -> List[Dict]:
                 for k,v in data.items():
                     if not isinstance(v, str):
                         raise ValueError(f"The value for key:{k} in {json_file.name} is not a str")
-                law_Data.extend({
+                law_Data.append({
                     "content":data,
                     "metadata":{"source":json_file.name}
                 })
             except Exception as e:
                 raise RuntimeError(f"Loading {json_file.name} failed: {str(e)}")
 
-    print(f"Loaded {len(law_Data)} law data")
+    print(f"Loaded {len(law_Data)} law data file")
     return law_Data
 
 
@@ -37,8 +37,8 @@ def create_nodes(raw_Data: List[Dict]) -> List[TextNode]:
 
     nodes = []
     for data in raw_Data:
-        law_Dict = data['content']
-        source_file = data['metadata']['source']
+        law_Dict = data["content"]
+        source_file = data["metadata"]["source"]
 
         for full_title, content in law_Dict.items():
             node_id = f"{source_file}::{full_title}"
@@ -49,14 +49,14 @@ def create_nodes(raw_Data: List[Dict]) -> List[TextNode]:
 
             node = TextNode(
                 text=content,
-                id=node_id,
+                id_=node_id,
                 metadata={
                     "Section_Name": section_name,
                     "Section_Num": section_num,
                     "source":source_file,
-                    "content_type":"Law Act"
+                    "content_type":"BC Employment Law Act"
                 }
             )
             nodes.append(node)
-    print(f"Created {len(nodes)} nodes (ID Example: {nodes[0].id})")
+    print(f"Created {len(nodes)} nodes (ID Example: {nodes[0].id_})")
     return nodes

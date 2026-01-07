@@ -19,9 +19,9 @@ print(f'Train Data Label distribution: {train_category_counts}')
 print(f'Test Data Label distribution: {test_category_counts}')
 
 
-#  Eliminate rows where 'text' string length is greater than 1024
-train_filter = df_train[df_train['text'].str.len()<=1024]
-test_filter = df_test[df_test['text'].str.len()<=1024]
+#  Eliminate rows where 'text' string length is greater than 700
+train_filter = df_train[df_train['text'].str.len() <= 700]
+test_filter = df_test[df_test['text'].str.len() <= 700]
 
 # Check max length of text in train data after Elimination
 max_train = train_filter['text'].astype(str).str.len().max()
